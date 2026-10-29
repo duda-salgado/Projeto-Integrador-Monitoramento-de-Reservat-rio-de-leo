@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Industrial</title>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-sidebar: #0a0f5a;
+            --card-base: rgba(30, 41, 59, 0.7);
+            --border-glow: rgba(255, 255, 255, 0.08);
+            --primary: #2563eb;
+            --green: #22c55e;
+            --red: #ef4444;
+            --orange: #f97316;
+            --blue: #3b82f6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: var(--bg-main);
+            overflow: hidden;
+            color: #f8fafc;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 5px 0 25px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+        }
+
+        .logo {
+            text-align: center;
+            padding: 8px 16px;
+            border: 2px solid #ffffff;
+            font-size: 18px;
+            font-weight: 900;
+            font-style: italic;
+            letter-spacing: 4px;
+            margin-bottom: 35px;
+        }
+
+        .profile {
+            text-align: center;
+            padding-bottom: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .avatar {
+            width: 85px;
+            height: 85px;
+            border-radius: 50%;
+            background: #ffffff;
+            margin: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0a0f5a;
+            font-size: 42px;
+            margin-bottom: 15px;
+        }
+
+        .profile h3 { font-size: 16px; font-weight: 600; }
+        .profile p { font-size: 11px; opacity: 0.6; word-break: break-all; margin-top: 4px; }
+
+        .menu {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .menu button {
+            width: 100%;
+            padding: 14px 18px;
+            border: none;
+            border-top-left-radius: 20px;
+            border-bottom-left-radius: 20px;
+            cursor: pointer;
+            background: transparent;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .menu button.active, .menu button:hover {
+            background: #ffffff;
+            color: var(--bg-sidebar);
+            transform: translateX(5px);
+            font-weight: 700;
+        }
+
+        .sidebar-notes {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .notes-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-notes label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-save {
+            background: #ffffff;
+            color: #0a0f5a;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: opacity 0.2s ease;
+        }
+
+        .sidebar-notes textarea {
+            width: 100%;
+            height: 120px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px;
+            color: #f8fafc;
+            font-size: 12px;
+            resize: none;
+            outline: none;
+        }
+
+        .logout {
+            background: #ffffff !important;
+            color: #0a0f5a !important;
+            border: none !important;
+            border-radius: 20px !important;
+            font-weight: 600;
+            font-size: 13px !important;
+            padding: 8px 24px !important;
+            width: auto !important;
+            margin: 0 auto !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .main {
+            flex: 1;
+            padding: 35px;
+            overflow-y: auto;
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 35px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-top {
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .normal { background: var(--green); }
+        .alerta { background: var(--red); animation: pulse 1.2s infinite; }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { transform: scale(1); }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        .card {
+            background: var(--card-base);
+            border: 1px solid var(--border-glow);
+            border-radius: 20px;
+            padding: 25px;
+            backdrop-filter: blur(12px);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 220px;
+        }
+
+        .card:hover { transform: translateY(-5px); border-color: rgba(255, 255, 255, 0.15); }
+        .card-header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .card-title { font-size: 14px; font-weight: 600; color: #94a3b8; text-transform: uppercase; }
+        .big-number { font-size: 64px; font-weight: 700; line-height: 1; margin-bottom: 10px; }
+        .clock-display { font-size: 54px; font-weight: 700; line-height: 1; font-family: monospace; text-align: center; padding: 10px 0; }
+        .sub { color: #64748b; font-size: 13px; display: flex; align-items: center; gap: 5px; }
+
+        .green { color: var(--green); }
+        .red { color: var(--red); }
+        .orange { color: var(--orange); }
+        .blue { color: var(--blue); }
+
+        .gauge-container { display: flex; align-items: center; justify-content: space-around; width: 100%; }
+        .gauge { width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(var(--green) 0% 0%, rgba(255, 255, 255, 0.05) 0% 100%); display: flex; align-items: center; justify-content: center; }
+        .gauge-inner { width: 96px; height: 96px; border-radius: 50%; background: #1e293b; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+
+        .chart-box { min-height: 240px; }
+        @media (min-width: 1100px) { .chart-box { grid-column: span 2; } }
+        .chart { height: 140px; display: flex; align-items: flex-end; gap: 6px; margin-top: 15px; background: rgba(0, 0, 0, 0.15); padding: 10px; border-radius: 12px; }
+        .bar { flex: 1; border-radius: 4px 4px 0 0; background: linear-gradient(180deg, var(--blue), #1d4ed8); min-height: 2px; }
+        
+        .ai-box, .ai-box-2 { text-align: center; padding: 25px; background: rgba(0, 0, 0, 0.2); border-radius: 16px; }
+        .ai-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+        .risk { font-size: 14px; color: #cbd5e1; font-weight: 500; }
+
+        @media(max-width:900px) {
+            .sidebar { display: none; }
+            .main { padding: 20px; }
+            .header { flex-direction: column; gap: 15px; align-items: flex-start; }
+            .chart-box { grid-column: span 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <aside class="sidebar">
+        <div>
+            <div class="logo">SENAI</div>
+            <div class="profile">
+                <div class="avatar"><i class="fa-solid fa-user-gear"></i></div>
+                <h3>Maria Salgado</h3>
+                <p>maria.e.salgado@aluno.senai.br</p>
+            </div>
+            <div class="menu">
+                <button class="active"><i class="fa-solid fa-droplet"></i> Tanque Injetora</button>
+            </div>
+            <div class="sidebar-notes">
+                <div class="notes-header">
+                    <label><i class="fa-regular fa-clipboard"></i> Anotações</label>
+                    <button class="btn-save" id="btnSalvarNota"><i class="fa-solid fa-floppy-disk"></i> SALVAR</button>
+                </div>
+                <textarea id="txtAnotacoes" placeholder="Digite suas observações aqui..."></textarea>
+            </div>
+        </div>
+        <button class="logout"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+    </aside>
+
+    <main class="main">
+        <div class="header">
+            <h1>Dashboard de Monitoramento</h1>
+            <div id="statusTop" class="status-top normal"><i class="fa-solid fa-circle-check"></i> OPERANDO NORMALMENTE</div>
+        </div>
+
+        <div class="grid">
+            <div class="card" style="min-height: 250px;">
+                <div class="card-header-box">
+                    <span class="card-title">Nível do Reservatório</span>
+                    <i class="fa-solid fa-water-ladder blue"></i>
+                </div>
+                <div class="gauge-container">
+                    <div id="gaugeCircle" class="gauge">
+                        <div class="gauge-inner">
+                            <div id="percentual" class="big-number green" style="font-size: 26px;">0%</div>
+                            <div class="sub">Nível</div>
+                        </div>
+                    </div>
+                    <div id="litros" class="big-number blue" style="margin:0;">0L</div>
+                </div>
+                <div class="sub"><i class="fa-solid fa-circle-info"></i> Capacidade: <b>500L</b> | Mínimo: <b>100L</b></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header-box"><span class="card-title">Temperatura</span><i class="fa-solid fa-temperature-high orange"></i></div>
+                <div>
+                    <div id="temperatura" class="big-number orange">0°C</div>
+                    <div class="sub"><i class="fa-solid fa-circle-info"></i> Max: 80°C | Min: 40°C</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header-box"><span class="card-title">Pressão do Sistema</span><i class="fa-solid fa-gauge-high green"></i></div>
+                <div>
+                    <div id="pressao" class="big-number">0</div>
+                    <div class="sub"><i class="fa-solid fa-circle-info"></i> Faixa: <b>1200 a 1800 bar</b></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header-box"><span class="card-title">Consumo do Tanque</span><i class="fa-solid fa-oil-can blue"></i></div>
+                <div>
+                    <div id="consumo" class="big-number blue">0 L/h</div>
+                    <div class="sub">Consumo instantâneo do óleo</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header-box"><span class="card-title">Tempo de Operação</span><i class="fa-solid fa-clock green"></i></div>
+                <div class="ai-box" style="padding:20px 10px;">
+                    <div id="tempoOperacao" class="clock-display green">30:00:00</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header-box"><span class="card-title">Informações de Controle</span></div>
+                <div class="ai-box-2">
+                    <div id="predicao" class="ai-title green">01/06/2026</div>
+                    <div id="probabilidade" class="risk">ÚLTIMA MANUTENÇÃO PREVENTIVA REALIZADA</div>
+                </div>
+            </div>
+
+            <div class="card chart-box">
+                <div class="card-header-box"><span class="card-title">Histórico de Consumo em Tempo Real</span><i class="fa-solid fa-chart-bar blue"></i></div>
+                <div id="chart" class="chart"></div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    const socket = io("http://34.203.34.216:3000");
+
+    const litros = document.getElementById("litros");
+    const percentual = document.getElementById("percentual");
+    const temperatura = document.getElementById("temperatura");
+    const pressao = document.getElementById("pressao");
+    const consumo = document.getElementById("consumo");
+    const statusTop = document.getElementById("statusTop");
+    const predicao = document.getElementById("predicao");
+    const probabilidade = document.getElementById("probabilidade");
+    const chart = document.getElementById("chart");
+    const gaugeCircle = document.getElementById("gaugeCircle");
+    const tempoOperacao = document.getElementById("tempoOperacao");
+
+    let historico = [];
+    let totalSegundos = 108000;
+
+    setInterval(() => {
+        totalSegundos++;
+        let horas = Math.floor(totalSegundos / 3600);
+        let minutos = Math.floor((totalSegundos % 3600) / 60);
+        let segundos = totalSegundos % 60;
+        if (tempoOperacao) {
+            tempoOperacao.innerHTML = String(horas).padStart(2, '0') + ":" + String(minutos).padStart(2, '0') + ":" + String(segundos).padStart(2, '0');
+        }
+    }, 1000);
+
+    socket.on("dados", (dados) => {
+        console.log("Dados recebidos:", dados);
+        if (!dados) return;
+
+        if (litros) litros.innerHTML = (dados.litros ?? 0).toFixed(0) + "L";
+        if (percentual) percentual.innerHTML = (dados.nivel_percentual ?? 0).toFixed(0) + "%";
+        if (temperatura) temperatura.innerHTML = (dados.temperatura ?? 0) + "°C";
+        if (pressao) pressao.innerHTML = (dados.pressao ?? 0) + " <span style='font-size:16px; color:#64748b;'>bar</span>";
+        if (consumo) consumo.innerHTML = (dados.consumo_hora ?? 0).toFixed(1) + " L/h";
+
+        let p = dados.nivel_percentual ?? 0;
+        let corGauge = p < 35 ? "var(--red)" : "var(--green)";
+        if (gaugeCircle) {
+            gaugeCircle.style.background = `conic-gradient(${corGauge} 0% ${p}%, rgba(255,255,255,0.05) ${p}% 100%)`;
+        }
+
+        let risco = 0;
+        if ((dados.consumo_hora ?? 0) > 60) risco += 40;
+        if ((dados.litros ?? 0) < 100) risco += 25;
+        if ((dados.temperatura ?? 0) > 70) risco += 20;
+        if ((dados.pressao ?? 0) > 1700) risco += 15;
+
+        if (risco >= 50) {
+            if (statusTop) {
+                statusTop.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ALERTA OPERACIONAL`;
+                statusTop.className = "status-top alerta";
+            }
+            if (predicao) {
+                predicao.innerHTML = "ALTA CHANCE DE FALHA";
+                predicao.className = "ai-title red";
+            }
+        } else {
+            if (statusTop) {
+                statusTop.innerHTML = `<i class="fa-solid fa-circle-check"></i> OPERANDO NORMALMENTE`;
+                statusTop.className = "status-top normal";
+            }
+            if (predicao) {
+                predicao.innerHTML = "SISTEMA ESTÁVEL";
+                predicao.className = "ai-title green";
+            }
+        }
+
+        if (probabilidade) probabilidade.innerHTML = "Probabilidade de falha: " + risco + "%";
+
+        if (dados.litros !== undefined) {
+            historico.push(dados.litros);
+        }
+        if (historico.length > 25) historico.shift();
+
+        if (chart) {
+            chart.innerHTML = "";
+            historico.forEach(valor => {
+                const bar = document.createElement("div");
+                bar.classList.add("bar");
+                let altura = valor / 5;
+                if (altura > 100) altura = 100;
+                bar.style.height = altura + "%";
+                chart.appendChild(bar);
+            });
+        }
+    });
+
+    // Bônus: Ação do botão salvar funcionando
+    document.getElementById("btnSalvarNota").addEventListener("click", () => {
+        alert("Nota salva com sucesso: " + document.getElementById("txtAnotacoes").value);
+    });
+</script>
+</body>
+</html>
