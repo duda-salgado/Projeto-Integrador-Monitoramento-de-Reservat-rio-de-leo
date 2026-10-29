@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Industrial - Operador</title>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-main: #0b132b;
+            --bg-sidebar: #060a17;
+            --card-base: rgba(18, 30, 55, 0.85);
+            --border-glow: rgba(255, 255, 255, 0.1);
+            --primary: #1d4ed8;
+            --green: #22c55e;
+            --red: #ef4444;
+            --orange: #f59e0b;
+            --blue: #3b82f6;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        body {
+            background: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .sidebar {
+            width: 280px;
+            min-width: 280px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.4);
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .logo-text {
+            text-align: center;
+            padding: 12px 10px;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.2), rgba(15, 23, 42, 0.4));
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            font-size: 26px;
+            font-weight: 900;
+            font-style: italic;
+            letter-spacing: 6px;
+            color: #ffffff;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .profile {
+            text-align: center;
+            padding-bottom: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .avatar {
+            width: 75px;
+            height: 75px;
+            border-radius: 50%;
+            background: #1e293b;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            margin: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #38bdf8;
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+
+        .profile h3 { font-size: 15px; font-weight: 500; color: var(--text-main); }
+        .profile p { font-size: 11px; opacity: 0.6; word-break: break-all; margin-top: 4px; color: var(--text-muted); }
+
+        .menu {
+            margin-top: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .menu button {
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .menu button.active, .menu button:hover {
+            background: #1e293b;
+            color: #ffffff;
+            border-left: 4px solid var(--blue);
+            font-weight: 600;
+        }
+
+        .logout {
+            background: rgba(239, 68, 68, 0.1) !important;
+            color: #f87171 !important;
+            border: 1px solid rgba(239, 68, 68, 0.2) !important;
+            border-radius: 12px !important;
+            font-weight: 500;
+            font-size: 13px !important;
+            padding: 10px 20px !important;
+            width: 100% !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .logout:hover {
+            background: rgba(239, 68, 68, 0.2) !important;
+        }
+
+        .main {
+            flex: 1;
+            padding: 35px;
+            overflow-y: auto;
+            background: radial-gradient(circle at top right, #132247, #0b132b);
+            height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 35px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        /* Título idêntico à referência (com a borda azul à esquerda) */
+        .header h1 {
+            font-size: clamp(20px, 2.2vw, 26px);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #f8fafc;
+            text-transform: uppercase;
+            border-left: 4px solid var(--blue);
+            padding-left: 12px;
+        }
+
+        /* Status idêntico à referência */
+        .status-top {
+            padding: 14px 28px;
+            border-radius: 35px;
+            font-weight: 700;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            white-space: nowrap;
+            letter-spacing: 0.8px;
+            color: #ffffff;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+        }
+
+        .status-top i {
+            background: #ffffff;
+            color: var(--green);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+        }
+
+        .status-top.alerta i {
+            color: var(--red);
+        }
+
+        .normal { 
+            background: var(--green);
+            box-shadow: 0 0 25px rgba(34, 197, 94, 0.4);
+            animation: pulse-green 2s infinite;
+        }
+
+        .alerta { 
+            background: var(--red);
+            box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+            animation: pulse-red 1s infinite; 
+        }
+
+        @keyframes pulse-green {
+            0% { transform: scale(1); box-shadow: 0 0 15px rgba(34, 197, 94, 0.3); }
+            50% { transform: scale(1.02); box-shadow: 0 0 30px rgba(34, 197, 94, 0.6); }
+            100% { transform: scale(1); box-shadow: 0 0 15px rgba(34, 197, 94, 0.3); }
+        }
+
+        @keyframes pulse-red {
+            0% { transform: scale(1); box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+            50% { transform: scale(1.03); box-shadow: 0 0 35px rgba(239, 68, 68, 0.8); }
+            100% { transform: scale(1); box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+        }
+
+        .card {
+            background: var(--card-base);
+            border: 1px solid var(--border-glow);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            transition: all 0.25s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 240px;
+        }
+
+        .card:hover { border-color: rgba(59, 130, 246, 0.4); }
+        .card-header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .card-title { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+        .big-number { font-size: clamp(32px, 3.5vw, 48px); font-weight: 700; line-height: 1; margin-bottom: 10px; color: #f8fafc; }
+        .sub { color: var(--text-muted); font-size: 12px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+        .green { color: var(--green); }
+        .red { color: var(--red); }
+        .orange { color: var(--orange); }
+        .blue { color: #38bdf8; }
+
+        .gauge-container { display: flex; align-items: center; justify-content: space-around; width: 100%; flex-wrap: wrap; gap: 10px; }
+        .gauge { width: 110px; height: 110px; border-radius: 50%; background: conic-gradient(var(--green) 0% 0%, rgba(255, 255, 255, 0.05) 0% 100%); display: flex; align-items: center; justify-content: center; }
+        .gauge-inner { width: 90px; height: 90px; border-radius: 50%; background: #0f172a; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+
+        .card-notes {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .notes-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-action {
+            background: #1e293b;
+            color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-action:hover {
+            background: #334155;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .card-notes textarea {
+            width: 100%;
+            height: 90px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 12px;
+            color: #f8fafc;
+            font-size: 13px;
+            resize: none;
+            outline: none;
+        }
+        .card-notes textarea:focus {
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+
+        @media(max-width: 1024px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+
+        @media(max-width: 900px) {
+            .container { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; position: relative; }
+            .main { height: auto; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <aside class="sidebar" id="sidebar">
+        <div>
+            <div class="logo-text">SENAI</div>
+            <div class="profile">
+                <div class="avatar"><i class="fa-solid fa-user-gear"></i></div>
+                <h3>Carlos Silva</h3>
+                <p>carlos.silva@operador.senai.br</p>
+            </div>
+            <div class="menu">
+                <button class="active"><i class="fa-solid fa-plus"></i>ENGEL 1</button>
+            </div>
+        </div>
+        <button class="logout"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+    </aside>
+
+    <main class="main">
+        <div class="header">
+            <h1>Monitoramento de Reservatório de Óleo</h1>
+            <div id="statusTop" class="status-top normal"><i class="fa-solid fa-check"></i> OPERANDO NORMALMENTE</div>
+        </div>
+
+        <div class="grid">
+            <!-- Nível do Reservatório -->
+            <div class="card">
+                <div class="card-header-box">
+                    <span class="card-title">Nível do Reservatório</span>
+                    <i class="fa-solid fa-water-ladder blue"></i>
+                </div>
+                <div class="gauge-container">
+                    <div id="gaugeCircle" class="gauge">
+                        <div class="gauge-inner">
+                            <div id="percentual" class="big-number green" style="font-size: 22px;">0%</div>
+                            <div class="sub">Nível</div>
+                        </div>
+                    </div>
+                    <div id="litros" class="big-number blue" style="margin:0;">0L</div>
+                </div>
+                <div class="sub"><i class="fa-solid fa-circle-info"></i> Capacidade: <b>500L</b> | Mínimo: <b>100L</b></div>
+            </div>
+
+            <!-- Anotações do Operador -->
+            <div class="card">
+                <div class="card-header-box">
+                    <span class="card-title"><i class="fa-regular fa-clipboard"></i> Anotações do Operador</span>
+                </div>
+                <div class="card-notes">
+                    <textarea id="txtAnotacoes" placeholder="Digite suas observações de turno aqui..."></textarea>
+                    <div class="notes-actions">
+                        <button class="btn-action" id="btnSalvarNota"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    const socket = io("http://34.203.34.216:3000");
+
+    const litros = document.getElementById("litros");
+    const percentual = document.getElementById("percentual");
+    const statusTop = document.getElementById("statusTop");
+    const gaugeCircle = document.getElementById("gaugeCircle");
+
+    socket.on("dados", (dados) => {
+        console.log("Dados recebidos:", dados);
+        if (!dados) return;
+
+        if (litros) litros.innerHTML = (dados.litros ?? 0).toFixed(0) + "L";
+        if (percentual) percentual.innerHTML = (dados.nivel_percentual ?? 0).toFixed(0) + "%";
+
+        let p = dados.nivel_percentual ?? 0;
+        let corGauge = p < 35 ? "var(--red)" : "var(--green)";
+        if (gaugeCircle) {
+            gaugeCircle.style.background = `conic-gradient(${corGauge} 0% ${p}%, rgba(255,255,255,0.05) ${p}% 100%)`;
+        }
+
+        let risco = 0;
+        if ((dados.consumo_hora ?? 0) > 60) risco += 60;
+        if ((dados.litros ?? 0) < 100) risco += 40;
+
+        if (risco >= 50) {
+            if (statusTop) {
+                statusTop.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ALERTA OPERACIONAL`;
+                statusTop.className = "status-top alerta";
+            }
+        } else {
+            if (statusTop) {
+                statusTop.innerHTML = `<i class="fa-solid fa-check"></i> OPERANDO NORMALMENTE`;
+                statusTop.className = "status-top normal";
+            }
+        }
+    });
+
+    document.getElementById("btnSalvarNota").addEventListener("click", () => {
+        alert("Nota salva com sucesso: " + document.getElementById("txtAnotacoes").value);
+    });
+</script>
+</body>
+</html>
