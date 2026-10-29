@@ -33,27 +33,23 @@ Atualmente, o projeto conta com as seguintes telas e funcionalidades:
 
 ## 🔄 Histórico de versões
 
-### REV. 1 — Revisão do sistema
+REV. 1 — Revisão do escopo e das funcionalidades do sistema
 
-**Alterações realizadas:**
+Alterações realizadas:
 
-- **Código da IDE do Arduino:** foi removida a coleta dos dados de temperatura e pressão, pois essas informações eram simuladas e não representavam medições reais.
-- **Layout do dashboard:** foram removidos os elementos de visualização dos dados de temperatura e pressão, mantendo a interface alinhada às informações efetivamente utilizadas pelo sistema.
-- **Tela de login:** foi desenvolvida uma tela para permitir o acesso ao sistema.
-- **Dashboard do operador:** foi criada uma interface específica para o perfil de operador.
-- **Dashboard do gestor:** foi criada uma interface específica para o perfil de gestor.
+Código da IDE do Arduino: foi removida a coleta dos dados de temperatura e pressão, pois essas informações eram simuladas e não representavam medições reais.
 
-**Objetivo da revisão:** adequar o sistema às funcionalidades atuais do projeto, retirar informações simuladas e implementar interfaces específicas para os diferentes perfis de usuário.
+Layout do dashboard: foram removidos os elementos de visualização dos dados de temperatura e pressão, mantendo a interface alinhada às informações efetivamente utilizadas pelo sistema.
 
----
+Escopo do projeto: foi retirada a proposta de implementação de Inteligência Artificial (IA) preditiva, reduzindo o escopo do sistema e direcionando o desenvolvimento às funcionalidades essenciais de monitoramento do reservatório.
 
-## 🛠️ Tecnologias utilizadas
+Tela de login: foi desenvolvida uma tela para permitir o acesso ao sistema.
 
-- **Arduino IDE:** desenvolvimento e programação do microcontrolador.
-- **HTML:** estruturação das interfaces web.
-- **CSS:** estilização e organização visual das telas.
+Dashboard do operador: foi criada uma interface específica para o perfil de operador.
 
-*Outras tecnologias poderão ser adicionadas conforme a evolução do projeto.*
+Dashboard do gestor: foi criada uma interface específica para o perfil de gestor.
+
+Objetivo da revisão: adequar o escopo e as funcionalidades do sistema às necessidades atuais do projeto, eliminar dados simulados, retirar a proposta de IA preditiva e implementar interfaces específicas para os diferentes perfis de usuário.
 
 ---
 
