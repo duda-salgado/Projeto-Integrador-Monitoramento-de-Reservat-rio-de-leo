@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Industrial - Acesso</title>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-main: #0b132b;
+            --bg-sidebar: #060a17;
+            --card-base: rgba(18, 30, 55, 0.85);
+            --border-glow: rgba(255, 255, 255, 0.1);
+            --primary: #1d4ed8;
+            --green: #22c55e;
+            --red: #ef4444;
+            --orange: #f59e0b;
+            --blue: #3b82f6;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        body {
+            background: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Sistema de Telas / Roteamento */
+        .screen {
+            display: none;
+            min-height: 100vh;
+            width: 100vw;
+        }
+        .screen.active {
+            display: flex;
+        }
+
+        /* Estilo da Tela de Login / Início */
+        .auth-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, #132247, #0b132b);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .auth-card {
+            background: var(--card-base);
+            border: 1px solid var(--border-glow);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 440px;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .auth-logo {
+            font-size: 32px;
+            font-weight: 900;
+            font-style: italic;
+            letter-spacing: 8px;
+            color: #ffffff;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+        }
+
+        .auth-subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .auth-btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn-auth-main {
+            background: #1d4ed8;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(29, 78, 216, 0.2);
+        }
+
+        .btn-auth-main:hover {
+            opacity: 0.9;
+        }
+
+        .input-group {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: var(--blue);
+        }
+
+        .auth-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .btn-voltar {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+            transition: background 0.2s;
+        }
+
+        .btn-voltar:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-acessar {
+            background: #15803d;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 2;
+            transition: opacity 0.2s;
+            box-shadow: 0 4px 12px rgba(21, 128, 61, 0.2);
+        }
+
+        .btn-acessar:hover {
+            opacity: 0.9;
+        }
+
+        /* ================= ESTILOS EXATOS DE GESTAO.HTML ================= */
+        .container-gestao {
+            display: flex;
+            min-height: 100vh;
+            width: 100%;
+            position: relative;
+        }
+
+        .sidebar-g {
+            width: 280px;
+            min-width: 280px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.4);
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .logo-text-g {
+            text-align: center;
+            padding: 12px 10px;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.2), rgba(15, 23, 42, 0.4));
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            font-size: 26px;
+            font-weight: 900;
+            font-style: italic;
+            letter-spacing: 6px;
+            color: #ffffff;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .profile-g {
+            text-align: center;
+            padding-bottom: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .avatar-g {
+            width: 75px;
+            height: 75px;
+            border-radius: 50%;
+            background: #1e293b;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            margin: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #38bdf8;
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+
+        .profile-g h3 { font-size: 15px; font-weight: 500; color: var(--text-main); }
+        .profile-g p { font-size: 11px; opacity: 0.6; word-break: break-all; margin-top: 4px; color: var(--text-muted); }
+
+        .menu-g {
+            margin-top: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .menu-g button {
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .menu-g button.active, .menu-g button:hover {
+            background: #1e293b;
+            color: #ffffff;
+            border-left: 4px solid var(--blue);
+            font-weight: 600;
+        }
+
+        .logout-g {
+            background: rgba(239, 68, 68, 0.1) !important;
+            color: #f87171 !important;
+            border: 1px solid rgba(239, 68, 68, 0.2) !important;
+            border-radius: 12px !important;
+            font-weight: 500;
+            font-size: 13px !important;
+            padding: 10px 20px !important;
+            width: 100% !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .logout-g:hover {
+            background: rgba(239, 68, 68, 0.2) !important;
+        }
+
+        .main-g {
+            flex: 1;
+            padding: 35px;
+            overflow-y: auto;
+            background: radial-gradient(circle at top right, #132247, #0b132b);
+            height: 100vh;
+        }
+
+        .header-g {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 35px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header-g h1 {
+            font-size: clamp(20px, 2.2vw, 26px);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #f8fafc;
+            text-transform: uppercase;
+            border-left: 4px solid var(--blue);
+            padding-left: 12px;
+        }
+
+        .status-top-g {
+            padding: 14px 28px;
+            border-radius: 35px;
+            font-weight: 700;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            white-space: nowrap;
+            letter-spacing: 0.8px;
+            color: #ffffff;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+        }
+
+        .status-top-g i {
+            background: #ffffff;
+            color: var(--green);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+        }
+
+        .status-top-g.alerta i {
+            color: var(--red);
+        }
+
+        .normal-g { background: var(--green); }
+        .alerta-g { background: var(--red); }
+
+        .grid-g {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+        }
+
+        .card-g {
+            background: var(--card-base);
+            border: 1px solid var(--border-glow);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            transition: all 0.25s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 200px;
+        }
+
+        .card-g:hover { border-color: rgba(59, 130, 246, 0.4); }
+        .card-header-box-g { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .card-title-g { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+        .big-number-g { font-size: clamp(32px, 3.5vw, 48px); font-weight: 700; line-height: 1; margin-bottom: 10px; color: #f8fafc; }
+        .sub-g { color: var(--text-muted); font-size: 12px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+        .gauge-container-g { display: flex; align-items: center; justify-content: space-around; width: 100%; flex-wrap: wrap; gap: 10px; }
+        .gauge-g { width: 105px; height: 105px; border-radius: 50%; background: conic-gradient(var(--green) 0% 0%, rgba(255, 255, 255, 0.05) 0% 100%); display: flex; align-items: center; justify-content: center; }
+        .gauge-inner-g { width: 85px; height: 85px; border-radius: 50%; background: #0f172a; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+
+        .chart-box-g { grid-column: span 2; min-height: 240px; }
+        .chart-g { height: 140px; display: flex; align-items: flex-end; gap: 5px; margin-top: 15px; background: rgba(0, 0, 0, 0.2); padding: 12px; border-radius: 10px; overflow-x: auto; border: 1px solid rgba(255, 255, 255, 0.04); }
+        .bar-g { flex: 1; min-width: 8px; border-radius: 3px 3px 0 0; background: linear-gradient(180deg, #38bdf8, #1d4ed8); min-height: 2px; }
+
+        .notes-box-g { grid-column: span 2; }
+        .card-notes-g { display: flex; flex-direction: column; gap: 12px; flex: 1; }
+        .notes-actions-g { display: flex; gap: 10px; }
+        .btn-action-g {
+            background: #1e293b;
+            color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .btn-action-g:hover { background: #334155; border-color: rgba(255, 255, 255, 0.2); }
+        .card-notes-g textarea {
+            width: 100%;
+            height: 85px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 12px;
+            color: #f8fafc;
+            font-size: 13px;
+            resize: none;
+            outline: none;
+        }
+        .card-notes-g textarea:focus { border-color: rgba(59, 130, 246, 0.5); }
+
+
+        /* ================= ESTILOS EXATOS DE OPERACAO.HTML ================= */
+        .container-operacao {
+            display: flex;
+            min-height: 100vh;
+            width: 100%;
+            position: relative;
+        }
+
+        .sidebar-op {
+            width: 280px;
+            min-width: 280px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.4);
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .logo-text-op {
+            text-align: center;
+            padding: 12px 10px;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.2), rgba(15, 23, 42, 0.4));
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            font-size: 26px;
+            font-weight: 900;
+            font-style: italic;
+            letter-spacing: 6px;
+            color: #ffffff;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .profile-op {
+            text-align: center;
+            padding-bottom: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .avatar-op {
+            width: 75px;
+            height: 75px;
+            border-radius: 50%;
+            background: #1e293b;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            margin: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #38bdf8;
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+
+        .profile-op h3 { font-size: 15px; font-weight: 500; color: var(--text-main); }
+        .profile-op p { font-size: 11px; opacity: 0.6; word-break: break-all; margin-top: 4px; color: var(--text-muted); }
+
+        .menu-op {
+            margin-top: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .menu-op button {
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .menu-op button.active, .menu-op button:hover {
+            background: #1e293b;
+            color: #ffffff;
+            border-left: 4px solid var(--blue);
+            font-weight: 600;
+        }
+
+        .logout-op {
+            background: rgba(239, 68, 68, 0.1) !important;
+            color: #f87171 !important;
+            border: 1px solid rgba(239, 68, 68, 0.2) !important;
+            border-radius: 12px !important;
+            font-weight: 500;
+            font-size: 13px !important;
+            padding: 10px 20px !important;
+            width: 100% !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .logout-op:hover {
+            background: rgba(239, 68, 68, 0.2) !important;
+        }
+
+        .main-op {
+            flex: 1;
+            padding: 35px;
+            overflow-y: auto;
+            background: radial-gradient(circle at top right, #132247, #0b132b);
+            height: 100vh;
+        }
+
+        .header-op {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 35px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header-op h1 {
+            font-size: clamp(20px, 2.2vw, 26px);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #f8fafc;
+            text-transform: uppercase;
+            border-left: 4px solid var(--blue);
+            padding-left: 12px;
+        }
+
+        .status-top-op {
+            padding: 14px 28px;
+            border-radius: 35px;
+            font-weight: 700;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            white-space: nowrap;
+            letter-spacing: 0.8px;
+            color: #ffffff;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+        }
+
+        .status-top-op i {
+            background: #ffffff;
+            color: var(--green);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+        }
+
+        .status-top-op.alerta i { color: var(--red); }
+
+        .normal-op { background: var(--green); }
+        .alerta-op { background: var(--red); }
+
+        .grid-op {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+        }
+
+        .card-op {
+            background: var(--card-base);
+            border: 1px solid var(--border-glow);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            transition: all 0.25s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 240px;
+        }
+
+        .card-op:hover { border-color: rgba(59, 130, 246, 0.4); }
+        .card-header-box-op { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .card-title-op { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+        .big-number-op { font-size: clamp(32px, 3.5vw, 48px); font-weight: 700; line-height: 1; margin-bottom: 10px; color: #f8fafc; }
+        .sub-op { color: var(--text-muted); font-size: 12px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+        .gauge-container-op { display: flex; align-items: center; justify-content: space-around; width: 100%; flex-wrap: wrap; gap: 10px; }
+        .gauge-op { width: 110px; height: 110px; border-radius: 50%; background: conic-gradient(var(--green) 0% 0%, rgba(255, 255, 255, 0.05) 0% 100%); display: flex; align-items: center; justify-content: center; }
+        .gauge-inner-op { width: 90px; height: 90px; border-radius: 50%; background: #0f172a; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+
+        .card-notes-op { display: flex; flex-direction: column; gap: 12px; flex: 1; }
+        .notes-actions-op { display: flex; gap: 10px; }
+        .btn-action-op {
+            background: #1e293b;
+            color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .btn-action-op:hover { background: #334155; border-color: rgba(255, 255, 255, 0.2); }
+        .card-notes-op textarea {
+            width: 100%;
+            height: 90px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 12px;
+            color: #f8fafc;
+            font-size: 13px;
+            resize: none;
+            outline: none;
+        }
+        .card-notes-op textarea:focus { border-color: rgba(59, 130, 246, 0.5); }
+
+        @media(max-width: 1024px) {
+            .grid-g, .grid-op { grid-template-columns: 1fr; }
+            .chart-box-g, .notes-box-g { grid-column: span 1; }
+        }
+
+        @media(max-width: 900px) {
+            .container-gestao, .container-operacao { flex-direction: column; }
+            .sidebar-g, .sidebar-op { width: 100%; height: auto; position: relative; }
+            .main-g, .main-op { height: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TELA 1: INÍCIO (SELEÇÃO DE PERFIL) -->
+    <div id="telaInicio" class="screen active">
+        <div class="auth-container">
+            <div class="auth-card">
+                <div class="auth-logo">SENAI</div>
+                <div class="auth-subtitle">Portal de Monitoramento Industrial</div>
+                <div class="auth-btn-group">
+                    <button class="btn-auth-main" onclick="irParaTela('telaLoginGestao')">
+                        <i class="fa-solid fa-user-tie"></i> Acesso Gestão
+                    </button>
+                    <button class="btn-auth-main" onclick="irParaTela('telaLoginOperacao')" style="background: #15803d;">
+                        <i class="fa-solid fa-hard-hat"></i> Acesso Operação
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TELA 2: LOGIN GESTÃO -->
+    <div id="telaLoginGestao" class="screen">
+        <div class="auth-container">
+            <div class="auth-card" style="text-align: left;">
+                <div style="text-align: center;">
+                    <div class="auth-logo">SENAI</div>
+                    <div class="auth-subtitle">Login de Gestão</div>
+                </div>
+                <div class="input-group">
+                    <label><i class="fa-solid fa-envelope"></i> Usuário (E-mail)</label>
+                    <input type="email" id="gestaoEmail" placeholder="gestor@senai.br">
+                </div>
+                <div class="input-group">
+                    <label><i class="fa-solid fa-lock"></i> Senha</label>
+                    <input type="password" id="gestaoSenha" placeholder="••••••••">
+                </div>
+                <div class="input-group">
+                    <label><i class="fa-solid fa-id-card"></i> RE (Registro de Empregado)</label>
+                    <input type="text" id="gestaoRE" placeholder="Ex: 12345">
+                </div>
+                <div class="auth-actions">
+                    <button class="btn-voltar" onclick="irParaTela('telaInicio')"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+                    <button class="btn-acessar" onclick="fazerLogin('gestao')"><i class="fa-solid fa-right-to-bracket"></i> Acessar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TELA 3: LOGIN OPERAÇÃO -->
+    <div id="telaLoginOperacao" class="screen">
+        <div class="auth-container">
+            <div class="auth-card" style="text-align: left;">
+                <div style="text-align: center;">
+                    <div class="auth-logo">SENAI</div>
+                    <div class="auth-subtitle">Login de Operação</div>
+                </div>
+                <div class="input-group">
+                    <label><i class="fa-solid fa-id-card"></i> RE (Registro de Empregado)</label>
+                    <input type="text" id="operacaoRE" placeholder="Ex: 54321">
+                </div>
+                <div class="input-group">
+                    <label><i class="fa-solid fa-lock"></i> Senha</label>
+                    <input type="password" id="operacaoSenha" placeholder="••••••••">
+                </div>
+                <div class="auth-actions">
+                    <button class="btn-voltar" onclick="irParaTela('telaInicio')"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+                    <button class="btn-acessar" onclick="fazerLogin('operacao')"><i class="fa-solid fa-right-to-bracket"></i> Acessar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TELA 4: DASHBOARD GESTÃO (Idêntico ao arquivo gestao.html)[cite: 8] -->
+    <div id="telaDashboardGestao" class="screen">
+        <div class="container-gestao">
+            <aside class="sidebar-g">
+                <div>
+                    <div class="logo-text-g">SENAI</div>
+                    <div class="profile-g">
+                        <div class="avatar-g"><i class="fa-solid fa-user-gear"></i></div>
+                        <h3 id="nomeGestorExibir">Maria Salgado</h3>
+                        <p id="emailGestorExibir">maria.e.salgado@aluno.senai.br</p>
+                    </div>
+                    <div class="menu-g">
+                        <button class="active"><i class="fa-solid fa-plus"></i>ENGEL 1</button>
+                        <button><i class="fa-solid fa-plus"></i>ENGEL 2</button>
+                        <button><i class="fa-solid fa-plus"></i>ENGEL 3</button>
+                    </div>
+                </div>
+                <button class="logout-g" onclick="fazerLogout()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+            </aside>
+
+            <main class="main-g">
+                <div class="header-g">
+                    <h1>Monitoramento de Reservatório de Óleo</h1>
+                    <div id="statusTopGestao" class="status-top-g normal-g"><i class="fa-solid fa-check"></i> OPERANDO NORMALMENTE</div>
+                </div>
+
+                <div class="grid-g">
+                    <div class="card-g" style="min-height: 240px;">
+                        <div class="card-header-box-g">
+                            <span class="card-title-g">Nível do Reservatório</span>
+                            <i class="fa-solid fa-water-ladder blue"></i>
+                        </div>
+                        <div class="gauge-container-g">
+                            <div id="gaugeCircleGestao" class="gauge-g">
+                                <div class="gauge-inner-g">
+                                    <div id="percentualGestao" class="big-number-g green" style="font-size: 22px;">0%</div>
+                                    <div class="sub-g">Nível</div>
+                                </div>
+                            </div>
+                            <div id="litrosGestao" class="big-number-g blue" style="margin:0;">0L</div>
+                        </div>
+                        <div class="sub-g"><i class="fa-solid fa-circle-info"></i> Capacidade: <b>500L</b> | Mínimo: <b>100L</b></div>
+                    </div>
+
+                    <div class="card-g" style="min-height: 240px;">
+                        <div class="card-header-box-g"><span class="card-title-g">Consumo do Tanque</span><i class="fa-solid fa-oil-can blue"></i></div>
+                        <div>
+                            <div id="consumoGestao" class="big-number-g blue">0 L/h</div>
+                            <div class="sub-g">Consumo instantâneo do óleo</div>
+                        </div>
+                    </div>
+
+                    <div class="card-g chart-box-g">
+                        <div class="card-header-box-g"><span class="card-title-g">Histórico de Consumo em Tempo Real</span><i class="fa-solid fa-chart-bar blue"></i></div>
+                        <div id="chartGestao" class="chart-g"></div>
+                    </div>
+
+                    <div class="card-g notes-box-g">
+                        <div class="card-header-box-g">
+                            <span class="card-title-g"><i class="fa-regular fa-clipboard"></i> Anotações e Relatório</span>
+                        </div>
+                        <div class="card-notes-g">
+                            <textarea id="txtAnotacoesGestao" placeholder="Digite suas observações aqui..."></textarea>
+                            <div class="notes-actions-g">
+                                <button class="btn-action-g" onclick="salvarNota('Gestao')"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
+                                <button class="btn-action-g" onclick="gerarRelatorio()"><i class="fa-solid fa-file-pdf"></i> Gerar Relatório</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- TELA 5: DASHBOARD OPERAÇÃO (Idêntico ao arquivo operacao.html)[cite: 9] -->
+    <div id="telaDashboardOperacao" class="screen">
+        <div class="container-operacao">
+            <aside class="sidebar-op">
+                <div>
+                    <div class="logo-text-op">SENAI</div>
+                    <div class="profile-op">
+                        <div class="avatar-op"><i class="fa-solid fa-user-gear"></i></div>
+                        <h3 id="nomeOperadorExibir">Carlos Silva</h3>
+                        <p id="reOperadorExibir">RE: 54321</p>
+                    </div>
+                    <div class="menu-op">
+                        <button class="active"><i class="fa-solid fa-plus"></i>ENGEL 1</button>
+                    </div>
+                </div>
+                <button class="logout-op" onclick="fazerLogout()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+            </aside>
+
+            <main class="main-op">
+                <div class="header-op">
+                    <h1>Monitoramento de Reservatório de Óleo</h1>
+                    <div id="statusTopOperacao" class="status-top-op normal-op"><i class="fa-solid fa-check"></i> OPERANDO NORMALMENTE</div>
+                </div>
+
+                <div class="grid-op">
+                    <div class="card-op">
+                        <div class="card-header-box-op">
+                            <span class="card-title-op">Nível do Reservatório</span>
+                            <i class="fa-solid fa-water-ladder blue"></i>
+                        </div>
+                        <div class="gauge-container-op">
+                            <div id="gaugeCircleOperacao" class="gauge-op">
+                                <div class="gauge-inner-op">
+                                    <div id="percentualOperacao" class="big-number-op green" style="font-size: 22px;">0%</div>
+                                    <div class="sub-op">Nível</div>
+                                </div>
+                            </div>
+                            <div id="litrosOperacao" class="big-number-op blue" style="margin:0;">0L</div>
+                        </div>
+                        <div class="sub-op"><i class="fa-solid fa-circle-info"></i> Capacidade: <b>500L</b> | Mínimo: <b>100L</b></div>
+                    </div>
+
+                    <div class="card-op">
+                        <div class="card-header-box-op">
+                            <span class="card-title-op"><i class="fa-regular fa-clipboard"></i> Anotações do Operador</span>
+                        </div>
+                        <div class="card-notes-op">
+                            <textarea id="txtAnotacoesOperacao" placeholder="Digite suas observações de turno aqui..."></textarea>
+                            <div class="notes-actions-op">
+                                <button class="btn-action-op" onclick="salvarNota('Operacao')"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- SCRIPT DE NAVEGAÇÃO E SOCKET.IO -->
+    <script>
+        function irParaTela(idTela) {
+            document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+            document.getElementById(idTela).classList.add('active');
+        }
+
+        function fazerLogin(tipo) {
+            if (tipo === 'gestao') {
+                const email = document.getElementById('gestaoEmail').value;
+                const re = document.getElementById('gestaoRE').value;
+                if(!email || !re) {
+                    alert("Por favor, preencha o e-mail e o RE.");
+                    return;
+                }
+                document.getElementById('emailGestorExibir').innerText = email;
+                document.getElementById('nomeGestorExibir').innerText = "Gestor(a)";
+                irParaTela('telaDashboardGestao');
+            } else if (tipo === 'operacao') {
+                const re = document.getElementById('operacaoRE').value;
+                if(!re) {
+                    alert("Por favor, preencha o RE.");
+                    return;
+                }
+                document.getElementById('reOperadorExibir').innerText = "RE: " + re;
+                document.getElementById('nomeOperadorExibir').innerText = "Operador(a)";
+                irParaTela('telaDashboardOperacao');
+            }
+        }
+
+        function fazerLogout() {
+            irParaTela('telaInicio');
+        }
+
+        function salvarNota(tipo) {
+            const texto = document.getElementById(tipo === 'Gestao' ? 'txtAnotacoesGestao' : 'txtAnotacoesOperacao').value;
+            alert("Nota salva com sucesso: " + texto);
+        }
+
+        function gerarRelatorio() {
+            alert("Gerando relatório com base nas anotações e dados atuais...");
+        }
+
+        const socket = io("http://34.203.34.216:3000");
+        let historicoGestao = [];
+
+        socket.on("dados", (dados) => {
+            if (!dados) return;
+
+            // Dados Gestão[cite: 8]
+            const litrosG = document.getElementById("litrosGestao");
+            const percG = document.getElementById("percentualGestao");
+            const consumoG = document.getElementById("consumoGestao");
+            const statusG = document.getElementById("statusTopGestao");
+            const gaugeG = document.getElementById("gaugeCircleGestao");
+            const chartG = document.getElementById("chartGestao");
+
+            if (litrosG) litrosG.innerHTML = (dados.litros ?? 0).toFixed(0) + "L";
+            if (percG) percG.innerHTML = (dados.nivel_percentual ?? 0).toFixed(0) + "%";
+            if (consumoG) consumoG.innerHTML = (dados.consumo_hora ?? 0).toFixed(1) + " L/h";
+
+            let pG = dados.nivel_percentual ?? 0;
+            if (gaugeG) gaugeG.style.background = `conic-gradient(${pG < 35 ? "var(--red)" : "var(--green)"} 0% ${pG}%, rgba(255,255,255,0.05) ${pG}% 100%)`;
+
+            let riscoG = ((dados.consumo_hora ?? 0) > 60 ? 60 : 0) + ((dados.litros ?? 0) < 100 ? 40 : 0);
+            if (statusG) {
+                if (riscoG >= 50) {
+                    statusG.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ALERTA OPERACIONAL`;
+                    statusG.className = "status-top-g alerta-g";
+                } else {
+                    statusG.innerHTML = `<i class="fa-solid fa-check"></i> OPERANDO NORMALMENTE`;
+                    statusG.className = "status-top-g normal-g";
+                }
+            }
+
+            if (chartG && dados.litros !== undefined) {
+                historicoGestao.push(dados.litros);
+                if (historicoGestao.length > 25) historicoGestao.shift();
+                chartG.innerHTML = "";
+                historicoGestao.forEach(val => {
+                    const bar = document.createElement("div");
+                    bar.classList.add("bar-g");
+                    let h = val / 5;
+                    if (h > 100) h = 100;
+                    bar.style.height = h + "%";
+                    chartG.appendChild(bar);
+                });
+            }
+
+            // Dados Operação[cite: 9]
+            const litrosO = document.getElementById("litrosOperacao");
+            const percO = document.getElementById("percentualOperacao");
+            const statusO = document.getElementById("statusTopOperacao");
+            const gaugeO = document.getElementById("gaugeCircleOperacao");
+
+            if (litrosO) litrosO.innerHTML = (dados.litros ?? 0).toFixed(0) + "L";
+            if (percO) percO.innerHTML = (dados.nivel_percentual ?? 0).toFixed(0) + "%";
+
+            if (gaugeO) gaugeO.style.background = `conic-gradient(${pG < 35 ? "var(--red)" : "var(--green)"} 0% ${pG}%, rgba(255,255,255,0.05) ${pG}% 100%)`;
+            if (statusO) {
+                if (riscoG >= 50) {
+                    statusO.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ALERTA OPERACIONAL`;
+                    statusO.className = "status-top-op alerta-op";
+                } else {
+                    statusO.innerHTML = `<i class="fa-solid fa-check"></i> OPERANDO NORMALMENTE`;
+                    statusO.className = "status-top-op normal-op";
+                }
+            }
+        });
+    </script>
+</body>
+</html>
