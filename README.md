@@ -2,13 +2,13 @@
 
 **PROJETO INTEGRADOR | 4º SEMESTRE | Análise e Desenvolvimento de Sistemas — 2026**
 
-## 📌 Sobre o projeto
+## 📌 Sobre o Projeto
 
 Este projeto tem como objetivo desenvolver um sistema de monitoramento de reservatório, integrando a coleta de dados por meio de um microcontrolador e a visualização das informações em um dashboard web.
 
 O sistema também conta com telas específicas para diferentes tipos de usuários, permitindo a separação das funcionalidades de acordo com o perfil de acesso.
 
-## 📂 Organização dos arquivos
+## 📂 Organização dos Arquivos
 
 O repositório contém os arquivos necessários para o desenvolvimento do projeto, incluindo os códigos do microcontrolador e as interfaces web.
 
@@ -23,7 +23,7 @@ Nessa pasta, estão armazenadas versões antigas de diferentes partes do sistema
 
 Esses arquivos permitem acompanhar a evolução do projeto, consultar implementações anteriores e comparar as alterações realizadas ao longo do desenvolvimento.
 
-## 🖥️ Funcionalidades atuais
+## 🖥️ Funcionalidades Atuais
 
 Atualmente, o projeto conta com as seguintes telas e funcionalidades:
 
@@ -31,7 +31,7 @@ Atualmente, o projeto conta com as seguintes telas e funcionalidades:
 - **Dashboard do operador:** interface destinada ao operador, com recursos de acompanhamento do sistema.
 - **Dashboard do gestor:** interface destinada ao gestor, com visualização das informações pertinentes ao seu perfil.
 
-## 🔄 Histórico de versões
+## 🔄 Histórico de Versões
 
 REV. 1 — Revisão do escopo e das funcionalidades do sistema
 
@@ -53,7 +53,7 @@ Objetivo da revisão: adequar o escopo e as funcionalidades do sistema às neces
 
 ---
 
-## 📚 Informações acadêmicas
+## 📚 Informações Acadêmicas
 
 **Projeto:** Projeto Integrador — Monitoramento de Reservatório  
 **Curso:** Análise e Desenvolvimento de Sistemas  
